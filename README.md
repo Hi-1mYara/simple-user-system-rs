@@ -1,6 +1,6 @@
 <h1 align="center">
     <br>
-    <img alt="Terminal example" src="https://github.com/Hi-1mYara/simple-user-system-rs/blob/master/img/ysus_example.png?raw=true" width="256">
+    <img alt="Terminal example" src="https://github.com/Hi-1mYara/simple-user-system-rs/blob/master/img/ysus_example.png?raw=true" width="512">
     <br>
     YSUS
     <br>
