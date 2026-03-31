@@ -1,6 +1,6 @@
+![Release header](https://github.com/Hi-1mYara/simple-user-system-rs/blob/master/img/ysus_example.png?raw=true)
+
 <h1 align="center">
-    <br>
-    <img alt="Terminal example" src="https://github.com/Hi-1mYara/simple-user-system-rs/blob/master/img/ysus_example.png?raw=true">
     <br>
     YSUS
     <br>
