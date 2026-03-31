@@ -76,7 +76,7 @@ ysus > output.json
 - [ ] Choice between command line arguments and TUI
 
 ## Installation
-If you want to install this program, you  
+If you want to install this program, you can choose to install it via cargo or building it yourself from this repository
 
 If you do not have Rust installed, follow the installation guide [here](https://doc.rust-lang.org/book/ch01-01-installation.html).
 
