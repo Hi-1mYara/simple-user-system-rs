@@ -13,7 +13,7 @@ pub struct User {
 impl Display for User {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, 
-            "{: <16} | {: <25} | {: <5} | admin: {: <5} | active: {: <5}", 
+            "{: <16} | {: <35} | {: <5} | admin: {: <5} | active: {: <5}", 
             self.username, 
             self.email,
             self.uuid,

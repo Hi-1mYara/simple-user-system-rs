@@ -11,7 +11,8 @@ pub struct App {
     // general app states
     pub current_screen: CurrentScreen,
     pub currently_editing: Option<CurrentlyEditing>,
-    // pub current_selected_user: Option<User>,
+    pub user_to_delete: u32,
+    pub user_to_delete_str: String,
     
     // list of currently saved users
     pub user_list: HashMap<u32, User>,
@@ -40,6 +41,7 @@ pub enum CurrentScreen {
     Exiting,
     LoadingFromFile,
     Error,
+    DeleteUser,
 }
 
 pub enum CurrentlyEditing {
@@ -53,7 +55,9 @@ impl App {
         App {
             current_screen: CurrentScreen::Main, 
             currently_editing: None,
-            // current_selected_user: None,
+            user_to_delete: 1000,
+            user_to_delete_str: String::new(),
+            
             user_list: HashMap::new(),
 
             username: String::new(),
@@ -126,6 +130,19 @@ impl App {
         } else if !self.admin {
             self.admin = true
         }
+    }
+
+    pub fn delete_user(&mut self) {
+        self.user_list.insert(
+            self.user_to_delete,
+            User { 
+                active: false, 
+                username: String::new(), 
+                email: String::new(), 
+                uuid: self.user_to_delete, 
+                admin: false 
+            }
+        );
     }
 }
 

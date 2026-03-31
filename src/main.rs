@@ -98,6 +98,11 @@ where
                         app.current_screen = CurrentScreen::LoadingFromFile;
                         app.file_path_input = String::new();
                     }
+
+                    KeyCode::Backspace => {
+                        app.current_screen = CurrentScreen::DeleteUser;
+                        app.user_to_delete_str = String::new()
+                    }
                     _ => {}
                 },
 
@@ -174,6 +179,37 @@ where
                     }
 
                     _ => {}
+                },
+
+                CurrentScreen::DeleteUser => {
+                    match key.code {
+                        KeyCode::Enter => {
+                            match app.user_to_delete_str.trim().parse::<u32>() {
+                                Ok(num) => {
+                                    app.user_to_delete = num;
+                                    app.delete_user();
+                                    app.current_screen = CurrentScreen::Main;
+                                },
+                                Err(err) => {
+                                    app.error = err.to_string();
+                                    app.current_screen = CurrentScreen::Error;
+                                }
+                            }
+                        },
+
+                        KeyCode::Char(char) => {
+                            app.user_to_delete_str.push(char);
+                        }
+
+                        KeyCode::Backspace => {
+                            app.user_to_delete_str.pop();
+                        }
+
+                        KeyCode::Esc => {
+                            app.current_screen = CurrentScreen::Main;
+                        }
+                        _ => {}
+                    }
                 },
 
                 CurrentScreen::LoadingFromFile => match key.code {

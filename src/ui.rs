@@ -54,8 +54,8 @@ pub fn ui(frame: &mut Frame, app: &App) {
     let middle_chunks = Layout::default()
         .direction(Direction::Horizontal)
         .constraints([
-            Constraint::Percentage(25),
-            Constraint::Percentage(75),
+            Constraint::Percentage(30),
+            Constraint::Percentage(70),
         ])
         .split(chunks[1]);
 
@@ -63,6 +63,7 @@ pub fn ui(frame: &mut Frame, app: &App) {
     let user_enter_layout = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
+            Constraint::Length(3),
             Constraint::Length(3),
             Constraint::Length(3),
             Constraint::Length(3),
@@ -145,12 +146,13 @@ pub fn ui(frame: &mut Frame, app: &App) {
 
     // information on which screen the user is on and what they are doing
     let current_nav_text = vec![
-        match &app.current_screen {
+        match app.current_screen {
             CurrentScreen::Main => Span::styled("Main Screen", Style::default().fg(Color::Green)),
             CurrentScreen::Editing => Span::styled("Editing Mode", Style::default().fg(Color::Yellow)),
             CurrentScreen::LoadingFromFile => Span::styled("Loading From File", Style::default().fg(Color::Magenta)),
             CurrentScreen::Exiting => Span::styled("Exiting", Style::default().fg(Color::LightRed)),
-            CurrentScreen::Error => Span::styled("Error", Style::default().bg(Color::Red).fg(Color::Black).bold())
+            CurrentScreen::Error => Span::styled("Error", Style::default().bg(Color::Red).fg(Color::Black).bold()),
+            CurrentScreen::DeleteUser => Span::styled("Deleting User", Style::default().fg(Color::LightRed)),
         }
         .to_owned(),
 
@@ -196,7 +198,11 @@ pub fn ui(frame: &mut Frame, app: &App) {
             CurrentScreen::Error => Span::styled(
                 "[Enter] to dismiss", 
                 key_hint_style
-            )
+            ),
+            _ => Span::styled(
+                "[Enter] to confirm / [Esc] to cancel", 
+                key_hint_style
+            ),
         }
     };
 
@@ -231,7 +237,16 @@ pub fn ui(frame: &mut Frame, app: &App) {
         let file_path_value = Paragraph::new(app.error.clone()).block(popup_block).wrap(Wrap { trim: false });
         frame.render_widget(file_path_value, area);
     }
+    
+    if let CurrentScreen::DeleteUser = &app.current_screen {
+        let popup_block = Block::default()
+            .title("Enter the uuid for the user you want to delete")
+            .borders(Borders::ALL)
+            .style(Style::default().bg(Color::Gray).fg(Color::Black));
 
+        let file_path_value = Paragraph::new(app.user_to_delete_str.clone()).block(popup_block).wrap(Wrap { trim: false });
+        frame.render_widget(file_path_value, user_enter_layout[3]);
+    }
 }
 
 // helper for making popups
