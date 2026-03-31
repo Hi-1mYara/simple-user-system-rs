@@ -1,7 +1,18 @@
 [package]
 name = "simple-user-system"
-version = "1.1.5"
+version = "1.1.2"
 edition = "2024"
+license = "GPL-3.0-or-later"
+description = "A TUI for creating user data and saving it in JSON format"
+repository = "https://github.com/Hi-1mYara/simple-user-system-rs"
+homepage = ""
+readme = "README.md"
+categories = ["command-line-utilities"]
+keywords = ["json", "tui", "terminal"]
+
+[[bin]]
+name = "ysus"
+path = "src/main.rs"
 
 [dependencies]
 itertools = "0.14.0"
