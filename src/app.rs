@@ -94,7 +94,7 @@ impl App {
                 User {
                 active: true,
                 username: self.username.clone(),
-                email: self.email.clone(),
+                email: self.email.clone().to_lowercase(),
                 uuid: self.uuid.clone(),
                 admin: self.admin.clone()
             },
