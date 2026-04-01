@@ -180,27 +180,27 @@ pub fn ui(frame: &mut Frame, app: &App) {
     let current_key_hints = {
         match &app.current_screen {
             CurrentScreen::Main => Span::styled(
-                "[q] to quit / [e] to make new user / [r] to load from file", 
+                "[q] quit | [e] make new user | [r] load from file | [Backspace] delete user", 
                 key_hint_style
             ),
             CurrentScreen::Editing => Span::styled(
-                "[Tab] to switch fields / [Esc] to cancel / [Enter] to complete / [s] to save (when on admin)", 
+                "[Tab] switch fields | [Esc] cancel | [Enter] complete | [s] save (when on admin)", 
                 key_hint_style
             ),
             CurrentScreen::LoadingFromFile => Span::styled(
-                "WARNING: THIS WILL DELETE ALL ADDED USERS. DO NOT USE IN MIDDLE OF RUNTIME",
+                "WARNING: THIS WILL DELETE ALL ADDED USERS. DO NOT USE IN MIDDLE OF RUNTIME s|[Esc] cancel",
                 Style::default().fg(Color::Red)
             ),
             CurrentScreen::Exiting => Span::styled(
-                "[Y/Enter] to quit / [N] to quit and discard / [Esc] to cancel", 
+                "[Y/Enter] to quit | [N] to quit and discard | [Esc] to cancel", 
                 key_hint_style
             ),
             CurrentScreen::Error => Span::styled(
-                "[Enter] to dismiss", 
+                "[Enter] return to Main | [e] return to user creation", 
                 key_hint_style
             ),
-            _ => Span::styled(
-                "[Enter] to confirm / [Esc] to cancel", 
+            CurrentScreen::DeleteUser => Span::styled(
+                "[Enter] to confirm | [Esc] to cancel", 
                 key_hint_style
             ),
         }
@@ -212,44 +212,42 @@ pub fn ui(frame: &mut Frame, app: &App) {
     frame.render_widget(mode_footer, footer_block[0]);
     frame.render_widget(key_note_footer, footer_block[1]);
 
+    let popup_area_std = centered_rect(40, 10, frame.area());
+
     // popup for entering file path to read from
     if let CurrentScreen::LoadingFromFile = &app.current_screen {
-        let area = centered_rect(40, 10, frame.area());
-
-        let popup_block = Block::default()
-            .title("Enter a file path to read from / [Enter to confirm]")
-            .borders(Borders::ALL)
-            .style(Style::default().bg(Color::Gray).fg(Color::Black));
-
-        let file_path_value = Paragraph::new(app.file_path_input.clone()).block(popup_block).wrap(Wrap { trim: false });
-        frame.render_widget(file_path_value, area);
+        let title = "Enter a file path to read from / [Enter to confirm]";
+        popup_render(app.file_path_input.clone(), popup_area_std, title, frame);
     }
 
     // popup for showing any errors (very reusable)
     if let CurrentScreen::Error = &app.current_screen {
-        let area = centered_rect(40, 10, frame.area());
-
-        let popup_block = Block::default()
-            .title("An error has occurred")
-            .borders(Borders::ALL)
-            .style(Style::default().bg(Color::Gray).fg(Color::Black));
-
-        let file_path_value = Paragraph::new(app.error.clone()).block(popup_block).wrap(Wrap { trim: false });
-        frame.render_widget(file_path_value, area);
+        let title = "An error has occurred";
+        popup_render(app.error.clone(), popup_area_std, title, frame);
     }
     
     if let CurrentScreen::DeleteUser = &app.current_screen {
-        let popup_block = Block::default()
-            .title("Enter the uuid for the user you want to delete")
-            .borders(Borders::ALL)
-            .style(Style::default().bg(Color::Gray).fg(Color::Black));
-
-        let file_path_value = Paragraph::new(app.user_to_delete_str.clone()).block(popup_block).wrap(Wrap { trim: false });
-        frame.render_widget(file_path_value, user_enter_layout[3]);
+        let title = String::from("Enter the uuid for the user you want to delete");
+        popup_render(app.user_to_delete_str.clone(), user_enter_layout[3], title, frame);
     }
 }
 
-// helper for making popups
+// helper for making popups themselves
+fn popup_render<'a, T, A>(text: T, location: Rect, title: A, frame: &mut Frame) 
+where 
+    T: Into<Text<'a>>,
+    A: Into<Line<'a>>
+{
+    let popup_block = Block::default()
+            .title(title)
+            .borders(Borders::ALL)
+            .style(Style::default().bg(Color::Gray).fg(Color::Black));
+
+    let text = Paragraph::new(text).block(popup_block).wrap(Wrap { trim: false });
+    frame.render_widget(text, location);
+}
+
+// helper for making popups area
 fn centered_rect(percent_x: u16, percent_y: u16, r: Rect) -> Rect {
     // Cut given rectangle into three pieces
     let popup_layout = Layout::default()
@@ -270,4 +268,3 @@ fn centered_rect(percent_x: u16, percent_y: u16, r: Rect) -> Rect {
         ])
         .split(popup_layout[1])[1]
 }
-

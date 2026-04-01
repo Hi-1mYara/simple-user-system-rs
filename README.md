@@ -38,6 +38,7 @@ The Simple User System is a terminal program for creating users and saving them 
   - Username, email and UUID
   - Ability to make a user an admin
   - Activity state
+  - Deletion of entered user information, leaving the uuid intact
 - Saving of users
   - Saves created users to JSON format using serde_json
   - Import users from file and add to it
@@ -63,13 +64,18 @@ When you exit the program now, what you have inputted will be displayed in the t
   }
 }
 ```
-To save to file, pipe to a file like this:
+To save to file, just add the output file like this:
 ```bash
 ysus > output.json
 ```
 
+### Tested terminals
+- Ptyxis
+- GNOME terminal
+
+If you use this in another terminal and it works, open an issue and I will add it to the list.
+
 ## Planned features
-- [ ] User deletion from TUI
 - [ ] Command line arguments
 - [ ] Actual security?
 - [ ] Checking for empty fields during user creation

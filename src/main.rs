@@ -151,22 +151,27 @@ where
                                     app.email.push('s');
                                 }
                                 CurrentlyEditing::Admin => {
-                                    app.save_user();
-                                    app.currently_editing = None;
-                                    app.current_screen = CurrentScreen::Main;
+                                    if &app.username != "" && &app.email != "" {
+                                        app.save_user();
+                                        app.currently_editing = None;
+                                        app.current_screen = CurrentScreen::Main;
+                                    } else {
+                                        app.error = String::from("No field can be empty");
+                                        app.current_screen = CurrentScreen::Error;
+                                    }
                                 }
                             }
                         }
                     }
 
-                    KeyCode::Char(value) => {
+                    KeyCode::Char(char) => {
                         if let Some(editing) = &app.currently_editing {
                             match editing {
                                 CurrentlyEditing::Username => {
-                                    app.username.push(value);
+                                    app.username.push(char);
                                 }
                                 CurrentlyEditing::Email => {
-                                    app.email.push(value);
+                                    app.email.push(char);
                                 }
                                 CurrentlyEditing::Admin => {}
                             }
@@ -186,9 +191,14 @@ where
                         KeyCode::Enter => {
                             match app.user_to_delete_str.trim().parse::<u32>() {
                                 Ok(num) => {
-                                    app.user_to_delete = num;
-                                    app.delete_user();
-                                    app.current_screen = CurrentScreen::Main;
+                                    if num <= 1000 {
+                                        app.error = String::from("Cannot delete user: should not exist or is user 1000. If so, remove manually from file");
+                                        app.current_screen = CurrentScreen::Error;
+                                    } else {
+                                        app.user_to_delete = num;
+                                        app.delete_user();
+                                        app.current_screen = CurrentScreen::Main;
+                                    }
                                 },
                                 Err(err) => {
                                     app.error = err.to_string();
@@ -219,8 +229,8 @@ where
                     KeyCode::Backspace => {
                         app.file_path_input.pop();
                     }
-                    KeyCode::Char(value) => {
-                        app.file_path_input.push(value);
+                    KeyCode::Char(char) => {
+                        app.file_path_input.push(char);
                     }
                     KeyCode::Enter => {
                         match app.json_to_hashmap() {
@@ -254,8 +264,11 @@ where
                     KeyCode::Enter | KeyCode::Esc => {
                         app.current_screen = CurrentScreen::Main
                     }
+                    KeyCode::Char('e') => {
+                        app.current_screen = CurrentScreen::Editing;
+                    }
                     _ => {}
-                }
+                },
 
             }
         }
