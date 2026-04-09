@@ -1,6 +1,7 @@
 // way of storing information, error handling and reading from file
 use std::{collections::HashMap, error::Error, fs};
 
+use ratatui::widgets::ListState;
 // turning read file into hashmap of users
 use serde_json;
 
@@ -15,13 +16,10 @@ pub struct App {
     pub user_to_delete_str: String,
     
     // list of currently saved users
-    pub user_list: HashMap<u32, User>,
+    pub user_list: UserList,
 
     // user input to save to user 
-    pub username: String,
-    pub email: String,
-    pub admin: bool,
-    pub uuid: u32,
+    pub user_info: User,
 
     // file path for importing json files
     pub file_path_input: String,
@@ -31,8 +29,12 @@ pub struct App {
 
     // current crate version
     pub version: String,
+}
 
-
+pub struct UserList {
+    pub user_hash: HashMap<u32, User>,
+    pub user_vec: Vec<User>,
+    pub list_state: ListState
 }
 
 pub enum CurrentScreen {
@@ -57,13 +59,10 @@ impl App {
             currently_editing: None,
             user_to_delete: 1000,
             user_to_delete_str: String::new(),
-            
-            user_list: HashMap::new(),
 
-            username: String::new(),
-            email: String::new(),
-            admin: false,
-            uuid: 1000,
+            user_list: UserList::default(),
+
+            user_info: User::default(),
 
             file_path_input: String::new(),
 
@@ -78,32 +77,28 @@ impl App {
 
         let lookup: HashMap<u32, User> = serde_json::from_str(&json_string)?;
 
-        self.uuid = 1000;
+        self.user_info.uuid = 1000;
 
         for _ in &lookup {
-            self.uuid += 1
+            self.user_info.uuid += 1
         }
+
+        for pairs in &lookup {
+            self.user_list.user_vec.push(pairs.1.clone());
+        }
+
+        self.user_list.user_vec.sort_by_key(|a| a.uuid);
 
         Ok(lookup)
     }
 
     pub fn save_user(&mut self) {
-        self.user_list
-            .insert(
-                self.uuid.clone(),
-                User {
-                active: true,
-                username: self.username.clone(),
-                email: self.email.clone().to_lowercase(),
-                uuid: self.uuid.clone(),
-                admin: self.admin.clone()
-            },
-        );
+        self.user_list.user_hash
+            .insert(self.user_info.uuid.clone(), self.user_info.clone());
 
-        self.username = String::new();
-        self.email = String::new();
-        self.admin = false;
-        self.uuid += 1;
+        self.user_list.user_vec.push(self.user_info.clone());
+
+        self.user_info.uuid += 1;
     }
 
     pub fn toggle_editing(&mut self) {
@@ -119,21 +114,21 @@ impl App {
     }
     
     pub fn print_json(&self) -> serde_json::Result<()> {
-        let output = serde_json::to_string_pretty(&self.user_list)?;
+        let output = serde_json::to_string_pretty(&self.user_list.user_hash)?;
         println!("{}", output);
         Ok(())
     }
 
     pub fn toggle_admin(&mut self) {
-        if self.admin {
-            self.admin = false
-        } else if !self.admin {
-            self.admin = true
+        if self.user_info.admin {
+            self.user_info.admin = false
+        } else if !self.user_info.admin {
+            self.user_info.admin = true
         }
     }
 
     pub fn delete_user(&mut self) {
-        self.user_list.insert(
+        self.user_list.user_hash.insert(
             self.user_to_delete,
             User { 
                 active: false, 
@@ -143,6 +138,30 @@ impl App {
                 admin: false 
             }
         );
+
+        self.user_list.user_vec.remove((self.user_to_delete - 1000) as usize);
+        self.user_list.user_vec
+            .push(
+                User { 
+                    active: false, 
+                    username: String::new(), 
+                    email: String::new(), 
+                    uuid: self.user_to_delete, 
+                    admin: false 
+                }
+            );
+
+        self.user_list.user_vec.sort_by_key(|item| item.uuid);
+    }
+}
+
+impl Default for UserList {
+    fn default() -> Self {
+        Self { 
+            user_hash: HashMap::new(), 
+            user_vec: Vec::new(), 
+            list_state: ListState::default().with_selected(None) 
+        }
     }
 }
 

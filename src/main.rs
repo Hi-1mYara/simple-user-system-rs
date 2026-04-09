@@ -9,20 +9,12 @@ use ratatui::{
     Terminal, 
     crossterm::{
         event::{
-            self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode
-        }, 
-        execute, 
-        terminal::{
-            EnterAlternateScreen, 
-            LeaveAlternateScreen, 
-            disable_raw_mode, 
-            enable_raw_mode
-        }
+            self, Event, KeyCode
+        },
     }, 
     prelude::{
-        Backend, 
-        CrosstermBackend
-    }
+        Backend,
+    },
 };
 
 // app states and all of the ui rendering
@@ -42,22 +34,11 @@ mod app;
 fn main() -> Result<(), Box<dyn Error>> {
     let mut app = App::new();
 
-    enable_raw_mode()?;
-    let mut stderr = io::stderr();
-    execute!(stderr, EnableMouseCapture, EnterAlternateScreen)?;
-
-    let backend = CrosstermBackend::new(stderr);
-    let mut terminal = Terminal::new(backend)?;
+    let mut terminal = ratatui::init();
 
     let res = run_app(&mut terminal, &mut app);
 
-    disable_raw_mode()?;
-    execute!(
-        terminal.backend_mut(),
-        DisableMouseCapture,
-        LeaveAlternateScreen,
-    )?;
-    terminal.show_cursor()?;
+    ratatui::restore();
 
     if let Ok(do_print) = res {
         if do_print {
@@ -98,10 +79,26 @@ where
                         app.current_screen = CurrentScreen::LoadingFromFile;
                         app.file_path_input = String::new();
                     }
-
                     KeyCode::Backspace => {
-                        app.current_screen = CurrentScreen::DeleteUser;
-                        app.user_to_delete_str = String::new()
+                        if let Some(selected) = app.user_list.list_state.selected() {
+                            app.user_to_delete += selected as u32;
+                            app.delete_user();
+                        } else {
+                            app.current_screen = CurrentScreen::DeleteUser;
+                            app.user_to_delete_str = String::new()
+                        };
+                    }
+                    KeyCode::Right => {
+                        app.user_list.list_state.select_first();
+                    }
+                    KeyCode::Up => {
+                        app.user_list.list_state.select_previous();
+                    }
+                    KeyCode::Down => {
+                        app.user_list.list_state.select_next();
+                    }
+                    KeyCode::Left => {
+                        app.user_list.list_state.select(None);
                     }
                     _ => {}
                 },
@@ -131,10 +128,10 @@ where
                         if let Some(editing) = &app.currently_editing {
                             match editing {
                                 CurrentlyEditing::Username => {
-                                    app.username.pop();
+                                    app.user_info.username.pop();
                                 }
                                 CurrentlyEditing::Email => {
-                                    app.email.pop();
+                                    app.user_info.email.pop();
                                 }
                                 _ => {}
                             }
@@ -145,13 +142,13 @@ where
                         if let Some(editing) = &app.currently_editing {
                             match editing {
                                 CurrentlyEditing::Username => {
-                                    app.username.push('s');
+                                    app.user_info.username.push('s');
                                 }
                                 CurrentlyEditing::Email => {
-                                    app.email.push('s');
+                                    app.user_info.email.push('s');
                                 }
                                 CurrentlyEditing::Admin => {
-                                    if &app.username != "" && &app.email != "" {
+                                    if &app.user_info.username != "" && &app.user_info.email != "" {
                                         app.save_user();
                                         app.currently_editing = None;
                                         app.current_screen = CurrentScreen::Main;
@@ -168,10 +165,10 @@ where
                         if let Some(editing) = &app.currently_editing {
                             match editing {
                                 CurrentlyEditing::Username => {
-                                    app.username.push(char);
+                                    app.user_info.username.push(char);
                                 }
                                 CurrentlyEditing::Email => {
-                                    app.email.push(char);
+                                    app.user_info.email.push(char);
                                 }
                                 CurrentlyEditing::Admin => {}
                             }
@@ -235,7 +232,7 @@ where
                     KeyCode::Enter => {
                         match app.json_to_hashmap() {
                             Ok(map) => {
-                                app.user_list = map;
+                                app.user_list.user_hash = map;
                                 app.current_screen = CurrentScreen::Main;
                             },
                             Err(err) => {
@@ -272,5 +269,38 @@ where
 
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::error::Error;
+
+    use itertools::Itertools;
+    use ratatui::{style::{Color, Style}, text::{Line, Span}, widgets::ListItem};
+
+    use crate::app::App;
+
+    #[test]
+    fn list_check() -> Result<(), Box<dyn Error>>{
+        let mut app = App::new();
+        app.file_path_input = "/home/yara/Documents/Rust/misc-code/iotest.json".to_string();
+
+        app.json_to_hashmap()?;
+
+        let mut list_users = Vec::<ListItem>::new();
+
+        let list_users_clone = app.user_list.user_hash.iter().clone();
+
+        for pair in list_users_clone.sorted() {
+            list_users.push(ListItem::new(Line::from(Span::styled(
+                format!("{: <6} : {}", pair.0, pair.1), 
+                Style::default().fg(Color::Yellow)
+            ))));
+        }
+
+        app.user_list.list_state.select_first();
+
+        Ok(())
     }
 }

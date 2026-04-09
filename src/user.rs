@@ -22,3 +22,15 @@ impl Display for User {
         )
     }
 }
+
+impl Default for User {
+    fn default() -> Self {
+        Self { 
+            active: true, 
+            username: String::new(), 
+            email: String::new(), 
+            uuid: 1000, 
+            admin: false 
+        }
+    }
+}

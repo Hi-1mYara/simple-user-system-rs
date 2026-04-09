@@ -1,6 +1,3 @@
-// sorting the user list
-use itertools::Itertools;
-
 // actual ui
 use ratatui::{
     Frame, 
@@ -14,7 +11,7 @@ use ratatui::{
         Line, Span, Text
     }, 
     widgets::{
-        Block, Borders, List, ListItem, Paragraph, Wrap
+        Block, Borders, List, Paragraph, Wrap
     }
 };
 // app states
@@ -26,7 +23,7 @@ use crate::{
     }
 };
 
-pub fn ui(frame: &mut Frame, app: &App) {
+pub fn ui(frame: &mut Frame, app: &mut App) {
 // -- initial division of screen --
     let chunks = Layout::default()
         .direction(Direction::Vertical)
@@ -43,7 +40,12 @@ pub fn ui(frame: &mut Frame, app: &App) {
         .style(Style::default());
 
     let title = Paragraph::new(Text::styled(
-        format!("Simple User System v{}", &app.version), 
+        format!("Simple User System v{} -- selected user: {} ({})", &app.version, match &app.user_list.list_state.selected() {
+            Some(val) => val.to_string(),
+            None => "Nothing selected".to_string()
+        },
+        &app.user_list.user_vec.len()
+    ), 
         Style::default().fg(Color::Red)
     ))
     .block(title_block);
@@ -96,13 +98,13 @@ pub fn ui(frame: &mut Frame, app: &App) {
             CurrentlyEditing::Admin => admin_field = admin_field.style(active_style) 
         }
 
-        let username_value = Paragraph::new(app.username.clone()).block(user_field).wrap(Wrap { trim: false });
+        let username_value = Paragraph::new(app.user_info.username.clone()).block(user_field).wrap(Wrap { trim: false });
         frame.render_widget(username_value, user_enter_layout[0]);
 
-        let email_value = Paragraph::new(app.email.clone()).block(email_field).wrap(Wrap { trim: false });
+        let email_value = Paragraph::new(app.user_info.email.clone()).block(email_field).wrap(Wrap { trim: false });
         frame.render_widget(email_value, user_enter_layout[1]);
 
-        let admin_value = Paragraph::new(app.admin.clone().to_string()).block(admin_field).wrap(Wrap { trim: false });
+        let admin_value = Paragraph::new(app.user_info.admin.clone().to_string()).block(admin_field).wrap(Wrap { trim: false });
         frame.render_widget(admin_value, user_enter_layout[2]);
     } else {
         frame.render_widget(user_field, user_enter_layout[0]);
@@ -119,21 +121,19 @@ pub fn ui(frame: &mut Frame, app: &App) {
         ])
         .split(middle_chunks[1]);
 
-    // list of users sorted by uuid number
-    let mut list_users = Vec::<ListItem>::new();
+    let list_users = app.user_list.user_vec.clone()
+        .iter()
+        .map(|i| {format!("{i}")})
+        .collect::<List>()
+        .highlight_style(Style::default().fg(Color::Black).bg(Color::Yellow))
+        .highlight_symbol("> ");
 
-    let list_users_clone = app.user_list.iter().clone();
+    // // list highlight
+    // let list = List::new(list_users)
+    //     .highlight_style(Style::default().fg(Color::Black).bg(Color::Yellow))
+    //     .highlight_symbol("> ");
 
-    for pair in list_users_clone.sorted() {
-        list_users.push(ListItem::new(Line::from(Span::styled(
-            format!("{: <6} : {}", pair.0, pair.1), 
-            Style::default().fg(Color::Yellow)
-        ))));
-    }
-
-    let list = List::new(list_users);
-
-    frame.render_widget(list, list_chunks[1]);
+    frame.render_stateful_widget(list_users, list_chunks[1], &mut app.user_list.list_state);
 
 // -- bottom footer block --
     let footer_block = Layout::default()
@@ -188,7 +188,7 @@ pub fn ui(frame: &mut Frame, app: &App) {
                 key_hint_style
             ),
             CurrentScreen::LoadingFromFile => Span::styled(
-                "WARNING: THIS WILL DELETE ALL ADDED USERS. DO NOT USE IN MIDDLE OF RUNTIME s|[Esc] cancel",
+                "WARNING: THIS WILL DELETE ALL ADDED USERS. DO NOT USE IN MIDDLE OF RUNTIME | [Esc] cancel",
                 Style::default().fg(Color::Red)
             ),
             CurrentScreen::Exiting => Span::styled(
@@ -207,12 +207,12 @@ pub fn ui(frame: &mut Frame, app: &App) {
     };
 
     let key_note_footer = Paragraph::new(Line::from(current_key_hints))
-        .block(Block::default().borders(Borders::ALL));
+        .block(Block::default().borders(Borders::ALL)).wrap(Wrap { trim: false });
 
     frame.render_widget(mode_footer, footer_block[0]);
     frame.render_widget(key_note_footer, footer_block[1]);
 
-    let popup_area_std = centered_rect(40, 10, frame.area());
+    let popup_area_std: Rect = centered_rect(40, frame.area());
 
     // popup for entering file path to read from
     if let CurrentScreen::LoadingFromFile = &app.current_screen {
@@ -248,14 +248,14 @@ where
 }
 
 // helper for making popups area
-fn centered_rect(percent_x: u16, percent_y: u16, r: Rect) -> Rect {
+fn centered_rect(percent_x: u16, r: Rect) -> Rect {
     // Cut given rectangle into three pieces
     let popup_layout = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
-            Constraint::Percentage((100 - percent_y) / 2),
-            Constraint::Percentage(percent_y),
-            Constraint::Percentage((100 - percent_y) / 2)
+            Constraint::Fill(1),
+            Constraint::Length(3),
+            Constraint::Fill(1)
         ])
         .split(r);
 
